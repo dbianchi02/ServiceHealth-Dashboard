@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Service Health</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #111620;
+    --surface2: #171d2a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --muted: #5a6278;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --green-dim: rgba(34,197,94,0.12);
+    --yellow-dim: rgba(245,158,11,0.12);
+    --red-dim: rgba(239,68,68,0.12);
+    --blue-dim: rgba(59,130,246,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+  }
+  .logo-icon span {
+    border-radius: 2px;
+  }
+  .logo-icon span:nth-child(1) { background: #f25022; }
+  .logo-icon span:nth-child(2) { background: #7fba00; }
+  .logo-icon span:nth-child(3) { background: #00a4ef; }
+  .logo-icon span:nth-child(4) { background: #ffb900; }
+  .logo-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  #last-update {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  #refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--blue-dim);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #refresh-btn:hover { background: rgba(59,130,246,0.2); }
+  #refresh-btn.loading { opacity: 0.6; pointer-events: none; }
+  .spin { display: inline-block; }
+  .spin.active { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MAIN */
+  main { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+  /* SUMMARY BAR */
+  .summary-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .summary-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+  }
+  .summary-card:hover { border-color: var(--border2); }
+  .summary-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .summary-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+  .summary-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .s-healthy .summary-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .s-healthy .summary-value { color: var(--green); }
+  .s-degraded .summary-dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  .s-degraded .summary-value { color: var(--yellow); }
+  .s-incidents .summary-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .s-incidents .summary-value { color: var(--red); }
+  .s-total .summary-dot { background: var(--accent); }
+  .s-total .summary-value { color: var(--text); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* SERVICE GRID */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .service-card:hover { background: var(--surface2); border-color: var(--border2); }
+  .service-status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-healthy .service-status-dot { background: var(--green); }
+  .status-degraded .service-status-dot { background: var(--yellow); animation: pulse-yellow 2s infinite; }
+  .status-outage .service-status-dot { background: var(--red); animation: pulse-red 1.5s infinite; }
+  .status-investigating .service-status-dot { background: var(--yellow); animation: pulse-yellow 2s infinite; }
+  @keyframes pulse-yellow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.6); }
+    50% { box-shadow: 0 0 0 5px rgba(245,158,11,0); }
+  }
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+    50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+  }
+  .service-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .service-badge {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .badge-healthy { background: var(--green-dim); color: var(--green); }
+  .badge-degraded { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-outage { background: var(--red-dim); color: var(--red); }
+  .badge-investigating { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-unknown { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+  /* INCIDENTS */
+  .incidents-list { display: flex; flex-direction: column; gap: 10px; }
+  .incident-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+    transition: background 0.2s;
+  }
+  .incident-card:hover { background: var(--surface2); }
+  .incident-card.severity-high { border-left-color: var(--red); }
+  .incident-card.severity-medium { border-left-color: var(--yellow); }
+  .incident-card.severity-low { border-left-color: var(--accent); }
+  .incident-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+  .incident-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .incident-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .incident-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .severity-badge {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .sev-high { background: var(--red-dim); color: var(--red); }
+  .sev-medium { background: var(--yellow-dim); color: var(--yellow); }
+  .sev-low { background: var(--blue-dim); color: var(--accent); }
+  .incident-body { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+  .incident-footer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .incident-footer span { display: flex; align-items: center; gap: 5px; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 600; color: var(--green); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: var(--muted); }
+
+  /* ERROR STATE */
+  .error-state {
+    text-align: center;
+    padding: 64px 48px;
+    background: var(--surface);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 10px;
+  }
+  .error-title { font-size: 15px; font-weight: 600; color: var(--red); margin-bottom: 8px; }
+  .error-sub { font-size: 13px; color: var(--muted); }
+
+  /* SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .skeleton-card {
+    height: 56px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div>
+      <div class="logo-title">Microsoft Service Health</div>
+      <div class="logo-sub">M365 Monitoring Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="last-update">—</span>
+    <button id="refresh-btn" onclick="loadData()">
+      <span class="spin" id="spin-icon">↻</span> Aggiorna
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- SUMMARY -->
+  <div class="summary-bar" id="summary-bar">
+    <div class="summary-card s-total">
+      <div class="summary-dot"></div>
+      <div>
+        <div class="summary-label">Servizi totali</div>
+        <div class="summary-value" id="s-total">—</div>
+      </div>
+    </div>
+    <div class="summary-card s-healthy">
+      <div class="summary-dot"></div>
+      <div>
+        <div class="summary-label">Operativi</div>
+        <div class="summary-value" id="s-healthy">—</div>
+      </div>
+    </div>
+    <div class="summary-card s-degraded">
+      <div class="summary-dot"></div>
+      <div>
+        <div class="summary-label">Degradati</div>
+        <div class="summary-value" id="s-degraded">—</div>
+      </div>
+    </div>
+    <div class="summary-card s-incidents">
+      <div class="summary-dot"></div>
+      <div>
+        <div class="summary-label">Incident attivi</div>
+        <div class="summary-value" id="s-incidents">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="section-title">Stato servizi</div>
+  <div class="services-grid" id="services-grid">
+    <!-- skeleton -->
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
+
+  <!-- INCIDENTS -->
+  <div class="section-title">Incident attivi</div>
+  <div id="incidents-list">
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
+</main>
+
+<footer>
+  Microsoft Service Health Dashboard &mdash; dati via Microsoft Graph API &mdash; solo uso interno
+</footer>
+
+<script>
+const FUNCTION_URL = 'https://servicehealthmonitoringdashboard-dwh8chcke5hvbmek.westeurope-01.azurewebsites.net/api/GetServiceHealth?code=hcdrfJ3CD5J3DPhB25VZy6gLsXGjb4fwvpEwyCNJfts2AzFuJ1hAAg==';
+
+function statusClass(status) {
+  if (!status) return 'status-unknown';
+  const s = status.toLowerCase();
+  if (s.includes('operational') || s === 'servicedegradation' === false && s.includes('service') === false) {
+    if (s === 'serviceoperational') return 'status-healthy';
+  }
+  if (s === 'serviceoperational') return 'status-healthy';
+  if (s === 'servicedegradation' || s === 'serviceinterruption' || s.includes('degraded')) return 'status-degraded';
+  if (s === 'serviceoutage' || s.includes('outage')) return 'status-outage';
+  if (s === 'investigating' || s.includes('investigating')) return 'status-investigating';
+  return 'status-healthy';
+}
+
+function statusLabel(status) {
+  if (!status) return 'Unknown';
+  const map = {
+    'serviceoperational': 'Operativo',
+    'servicedegradation': 'Degradato',
+    'serviceinterruption': 'Interrotto',
+    'serviceoutage': 'Outage',
+    'investigating': 'Verifica',
+    'restoringservice': 'Ripristino',
+    'extendedrecovery': 'Recupero',
+    'falsepositive': 'Operativo',
+    'servicerestored': 'Ripristinato',
+  };
+  return map[status.toLowerCase()] || status;
+}
+
+function badgeClass(status) {
+  const sc = statusClass(status);
+  return sc.replace('status-', 'badge-');
+}
+
+function severityClass(sev) {
+  if (!sev) return 'sev-low';
+  const s = sev.toLowerCase();
+  if (s === 'critical' || s === 'high') return 'sev-high';
+  if (s === 'medium' || s === 'moderate') return 'sev-medium';
+  return 'sev-low';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function getLastUpdate(issues) {
+  if (!issues || issues.length === 0) return null;
+  const dates = issues.map(i => i.lastModifiedDateTime).filter(Boolean).map(d => new Date(d));
+  if (dates.length === 0) return null;
+  return new Date(Math.max(...dates));
+}
+
+async function loadData() {
+  const btn = document.getElementById('refresh-btn');
+  const spin = document.getElementById('spin-icon');
+  btn.classList.add('loading');
+  spin.classList.add('active');
+
+  try {
+    const res = await fetch(FUNCTION_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderDashboard(data);
+    const now = new Date();
+    document.getElementById('last-update').textContent = 'Aggiornato: ' + now.toLocaleTimeString('it-IT');
+  } catch (err) {
+    document.getElementById('services-grid').innerHTML = `
+      <div class="error-state" style="grid-column:1/-1">
+        <div class="error-title">Errore nel caricamento dati</div>
+        <div class="error-sub">${err.message}</div>
+      </div>`;
+    document.getElementById('incidents-list').innerHTML = '';
+  } finally {
+    btn.classList.remove('loading');
+    spin.classList.remove('active');
+  }
+}
+
+function renderDashboard(data) {
+  const health = data.health || [];
+  const issues = data.issues || [];
+
+  // Summary
+  const healthy = health.filter(s => statusClass(s.status) === 'status-healthy').length;
+  const degraded = health.filter(s => statusClass(s.status) !== 'status-healthy').length;
+  document.getElementById('s-total').textContent = health.length;
+  document.getElementById('s-healthy').textContent = healthy;
+  document.getElementById('s-degraded').textContent = degraded;
+  document.getElementById('s-incidents').textContent = issues.length;
+  document.getElementById('summary-bar').style.opacity = '1';
+
+  // Services grid
+  const grid = document.getElementById('services-grid');
+  if (health.length === 0) {
+    grid.innerHTML = '<div class="error-state" style="grid-column:1/-1"><div class="error-sub">Nessun dato servizi disponibile.</div></div>';
+  } else {
+    const sorted = [...health].sort((a,b) => {
+      const order = {'status-outage':0,'status-degraded':1,'status-investigating':2,'status-healthy':3,'status-unknown':4};
+      return (order[statusClass(a.status)]||3) - (order[statusClass(b.status)]||3);
+    });
+    grid.innerHTML = sorted.map((s, i) => `
+      <div class="service-card ${statusClass(s.status)}" style="animation-delay:${i*30}ms">
+        <div class="service-status-dot"></div>
+        <div class="service-name">${s.service || s.id || 'N/A'}</div>
+        <span class="service-badge ${badgeClass(s.status)}">${statusLabel(s.status)}</span>
+      </div>`).join('');
+  }
+
+  // Incidents
+  const list = document.getElementById('incidents-list');
+  if (issues.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <div class="empty-title">Nessun incident attivo</div>
+        <div class="empty-sub">Tutti i servizi Microsoft 365 risultano operativi.</div>
+      </div>`;
+  } else {
+    list.innerHTML = issues.map((inc, i) => {
+      const sev = inc.classification || inc.severity || 'low';
+      const lastMsg = inc.posts && inc.posts.length > 0
+        ? inc.posts[inc.posts.length - 1].description?.content || ''
+        : inc.impactDescription || '';
+      const cleanMsg = lastMsg.replace(/<[^>]*>/g, '').substring(0, 220) + (lastMsg.length > 220 ? '...' : '');
+      return `
+        <div class="incident-card severity-${sev.toLowerCase()}" style="animation-delay:${i*50}ms">
+          <div class="incident-header">
+            <div>
+              <div class="incident-id">${inc.id || '—'} &middot; ${inc.service || '—'}</div>
+              <div class="incident-title">${inc.title || 'Incident senza titolo'}</div>
+            </div>
+            <div class="incident-meta">
+              <span class="severity-badge ${severityClass(sev)}">${sev.toUpperCase()}</span>
+            </div>
+          </div>
+          ${cleanMsg ? `<div class="incident-body">${cleanMsg}</div>` : ''}
+          <div class="incident-footer">
+            <span>⏱ Inizio: ${formatDate(inc.startDateTime)}</span>
+            <span>↻ Aggiornato: ${formatDate(inc.lastModifiedDateTime)}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// Load on start
+loadData();
+</script>
+</body>
+</html>
