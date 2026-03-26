@@ -110,6 +110,9 @@ main{max-width:1400px;margin:0 auto;padding:24px 32px;}
 .class-incident{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
 .class-advisory{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
 .chevron{color:var(--text3);font-size:11px;transition:transform .2s;flex-shrink:0;margin-top:3px;}
+.next-update-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:4px;font-weight:500;white-space:nowrap;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(15,108,189,0.25);margin-top:6px;}
+.next-update-chip .chip-icon{font-size:10px;opacity:.8;}
+[data-theme="dark"] .next-update-chip{border-color:rgba(79,163,224,0.3);}
 .inc-card.open .chevron{transform:rotate(180deg);}
 .age-bar{height:3px;background:var(--surface2);}
 .age-fill{height:100%;transition:width .5s;}
@@ -312,6 +315,35 @@ function renderServices(filtered) {
   }).join('');
 }
 
+function extractNextUpdate(posts) {
+  // Search posts from most recent to oldest
+  const ordered = (posts || []).slice().reverse();
+  for (const p of ordered) {
+    const txt = stripHtml(p.description?.content || '');
+    // Common patterns from Microsoft health messages (EN + IT)
+    const patterns = [
+      /next\s+update\s+(?:by|before|within|at)?\s*[:\-]?\s*([^\n\r.]{5,50})/i,
+      /next\s+(?:scheduled\s+)?update\s*[:\-]\s*([^\n\r.]{5,50})/i,
+      /estimated\s+(?:resolution|recovery|restore)\s*(?:time)?\s*[:\-]\s*([^\n\r.]{5,50})/i,
+      /we(?:'ll| will)\s+(?:provide\s+)?(?:an?\s+)?(?:next\s+)?update\s+by\s+([^\n\r.]{5,50})/i,
+      /prossimo\s+aggiornamento\s*[:\-]?\s*(?:entro\s+)?([^\n\r.]{5,50})/i,
+      /aggiornamento\s+previsto\s*[:\-]?\s*([^\n\r.]{5,50})/i,
+    ];
+    for (const rx of patterns) {
+      const m = txt.match(rx);
+      if (m) {
+        let val = m[1].trim().replace(/[.;,]+$/, '');
+        // Try to parse as date
+        const d = new Date(val);
+        if (!isNaN(d) && d > new Date('2000-01-01')) return fmtDate(d);
+        // Return raw text if short enough
+        if (val.length <= 45) return val;
+      }
+    }
+  }
+  return null;
+}
+
 function renderIncidents(filtered) {
   const list = filtered !== undefined ? filtered : getFilteredIncidents();
   const container = document.getElementById('incidents-list');
@@ -329,6 +361,10 @@ function renderIncidents(filtered) {
     const classCss = inc.classification === 'incident' ? 'class-incident' : 'class-advisory';
     const classLabel = inc.classification === 'incident' ? 'Incident' : 'Advisory';
     const affected = inc.details?.find(d=>d.name==='AffectedChildWorkloads');
+    const nextUpd = extractNextUpdate(inc.posts);
+    const nextUpdChip = nextUpd
+      ? `<div class="next-update-chip"><span class="chip-icon">⏱</span> Prossimo agg.: ${nextUpd}</div>`
+      : '';
     const tlHtml = posts.map((p,pi)=>{
       const txt = stripHtml(p.description?.content);
       const long = txt.length > 350;
@@ -346,6 +382,7 @@ function renderIncidents(filtered) {
           <div class="inc-id">${inc.id} · avviato ${fmtDate(inc.startDateTime)} · ${days} giorni fa</div>
           <div class="inc-svc">${inc.service} › ${inc.featureGroup}</div>
           <div class="inc-title">${inc.title}</div>
+          ${nextUpdChip}
         </div>
         <div class="inc-meta">
           <span class="class-badge ${classCss}">${classLabel}</span>
@@ -361,6 +398,7 @@ function renderIncidents(filtered) {
             <div class="meta-item"><label>CLASSIFICAZIONE</label><span style="text-transform:capitalize">${inc.classification}</span></div>
             <div class="meta-item"><label>INIZIO</label><span>${fmtDate(inc.startDateTime)}</span></div>
             <div class="meta-item"><label>ULTIMO AGG.</label><span>${fmtDate(inc.lastModifiedDateTime)}</span></div>
+            ${nextUpd ? `<div class="meta-item"><label>PROSSIMO AGG.</label><span style="color:var(--accent);font-weight:600">${nextUpd}</span></div>` : ''}
             <div class="meta-item"><label>DURATA</label><span>${days} giorni</span></div>
             ${affected?`<div class="meta-item" style="grid-column:1/-1"><label>WORKLOAD IMPATTATI</label><span>${affected.value}</span></div>`:''}
           </div>
