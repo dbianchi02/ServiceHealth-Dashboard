@@ -2,7 +2,7 @@
 
 > Dashboard web per il monitoraggio in tempo reale dello stato dei servizi Microsoft 365, incident attivi e degradazioni operative. Progettata per sysadmin M365 che vogliono una vista centralizzata senza consultare manualmente il portale Microsoft 365 Admin Center.
 
-<img width="1859" height="934" alt="Dashboard screenshot" src="https://github.com/user-attachments/assets/5e7901a3-09d2-480c-bb45-f2894719a0c3" />
+<img width="1873" height="849" alt="image" src="https://github.com/user-attachments/assets/b4f58f61-8b4f-4695-b2d3-b8a05fa89ee1" />
 
 ---
 
