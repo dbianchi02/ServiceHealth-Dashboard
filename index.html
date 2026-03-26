@@ -110,9 +110,8 @@ main{max-width:1400px;margin:0 auto;padding:24px 32px;}
 .class-incident{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
 .class-advisory{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
 .chevron{color:var(--text3);font-size:11px;transition:transform .2s;flex-shrink:0;margin-top:3px;}
-.next-update-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:4px;font-weight:500;white-space:nowrap;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(15,108,189,0.25);margin-top:6px;}
+.next-update-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:4px;font-weight:500;white-space:nowrap;background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);margin-top:6px;}
 .next-update-chip .chip-icon{font-size:10px;opacity:.8;}
-[data-theme="dark"] .next-update-chip{border-color:rgba(79,163,224,0.3);}
 .inc-card.open .chevron{transform:rotate(180deg);}
 .age-bar{height:3px;background:var(--surface2);}
 .age-fill{height:100%;transition:width .5s;}
@@ -304,8 +303,8 @@ function renderServices(filtered) {
   grid.innerHTML = sorted.map((s,i) => {
     const cnt = incidentsForService(s.service).length;
     const badge = cnt > 0
-      ? `<span class="count-badge">${cnt}</span>`
-      : `<span class="status-badge ${badgeClass(s.status)}">${statusLabel(s.status)}</span>`;
+      ? `<span class="count-badge">${cnt}`</span>
+      : `<span class="status-badge ${badgeClass(s.status)}">${statusLabel(s.status)}`</span>;
     const active = activeServiceFilter === s.service ? ' active-filter' : '';
     return `<div class="svc-card ${statusClass(s.status)}${active}" style="animation-delay:${i*18}ms" onclick="clickServiceFilter('${s.service.replace(/'/g,"\\'")}')">
       <div class="status-dot"></div>
@@ -363,7 +362,7 @@ function renderIncidents(filtered) {
     const affected = inc.details?.find(d=>d.name==='AffectedChildWorkloads');
     const nextUpd = extractNextUpdate(inc.posts);
     const nextUpdChip = nextUpd
-      ? `<div class="next-update-chip"><span class="chip-icon">⏱</span> Prossimo agg.: ${nextUpd}</div>`
+      ? `<div class="next-update-chip"><span class="chip-icon">⏱ Prossimo agg.: ${nextUpd}</div></span>`
       : '';
     const tlHtml = posts.map((p,pi)=>{
       const txt = stripHtml(p.description?.content);
@@ -393,14 +392,13 @@ function renderIncidents(filtered) {
       <div class="inc-body">
         <div class="inc-summary">
           <div class="meta-grid">
-            <div class="meta-item"><label>SERVIZIO</label><span>${inc.service}</span></div>
-            <div class="meta-item"><label>FEATURE</label><span>${inc.feature||'—'}</span></div>
-            <div class="meta-item"><label>CLASSIFICAZIONE</label><span style="text-transform:capitalize">${inc.classification}</span></div>
-            <div class="meta-item"><label>INIZIO</label><span>${fmtDate(inc.startDateTime)}</span></div>
-            <div class="meta-item"><label>ULTIMO AGG.</label><span>${fmtDate(inc.lastModifiedDateTime)}</span></div>
-            ${nextUpd ? `<div class="meta-item"><label>PROSSIMO AGG.</label><span style="color:var(--accent);font-weight:600">${nextUpd}</span></div>` : ''}
-            <div class="meta-item"><label>DURATA</label><span>${days} giorni</span></div>
-            ${affected?`<div class="meta-item" style="grid-column:1/-1"><label>WORKLOAD IMPATTATI</label><span>${affected.value}</span></div>`:''}
+            <div class="meta-item"><label>SERVIZIO</label><span>${inc.service}</div></span>
+            <div class="meta-item"><label>FEATURE</label><span>${inc.feature||'—'}</div></span>
+            <div class="meta-item"><label>CLASSIFICAZIONE</label><span style="text-transform:capitalize">${inc.classification}</div></span>
+            <div class="meta-item"><label>INIZIO</label><span>${fmtDate(inc.startDateTime)}</div></span>
+            <div class="meta-item"><label>ULTIMO AGG.</label><span>${fmtDate(inc.lastModifiedDateTime)}</div></span>
+            <div class="meta-item"><label>DURATA</label><span>${days} giorni</div></span>
+            ${affected?`<div class="meta-item" style="grid-column:1/-1"><label>WORKLOAD IMPATTATI</label><span>${affected.value}</div>`</span>:''}
           </div>
         </div>
         <div class="tl-section">
