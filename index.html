@@ -303,8 +303,8 @@ function renderServices(filtered) {
   grid.innerHTML = sorted.map((s,i) => {
     const cnt = incidentsForService(s.service).length;
     const badge = cnt > 0
-      ? `<span class="count-badge">${cnt}`</span>
-      : `<span class="status-badge ${badgeClass(s.status)}">${statusLabel(s.status)}`</span>;
+      ? `<span class="count-badge">${cnt}</span>`
+      : `<span class="status-badge ${badgeClass(s.status)}">${statusLabel(s.status)}</span>`;
     const active = activeServiceFilter === s.service ? ' active-filter' : '';
     return `<div class="svc-card ${statusClass(s.status)}${active}" style="animation-delay:${i*18}ms" onclick="clickServiceFilter('${s.service.replace(/'/g,"\\'")}')">
       <div class="status-dot"></div>
@@ -362,7 +362,7 @@ function renderIncidents(filtered) {
     const affected = inc.details?.find(d=>d.name==='AffectedChildWorkloads');
     const nextUpd = extractNextUpdate(inc.posts);
     const nextUpdChip = nextUpd
-      ? `<div class="next-update-chip"><span class="chip-icon">⏱ Prossimo agg.: ${nextUpd}</div></span>`
+      ? `<div class="next-update-chip"><span class="chip-icon">⏱</span> Prossimo agg.: ${nextUpd}</div>`
       : '';
     const tlHtml = posts.map((p,pi)=>{
       const txt = stripHtml(p.description?.content);
@@ -392,13 +392,13 @@ function renderIncidents(filtered) {
       <div class="inc-body">
         <div class="inc-summary">
           <div class="meta-grid">
-            <div class="meta-item"><label>SERVIZIO</label><span>${inc.service}</div></span>
-            <div class="meta-item"><label>FEATURE</label><span>${inc.feature||'—'}</div></span>
-            <div class="meta-item"><label>CLASSIFICAZIONE</label><span style="text-transform:capitalize">${inc.classification}</div></span>
-            <div class="meta-item"><label>INIZIO</label><span>${fmtDate(inc.startDateTime)}</div></span>
-            <div class="meta-item"><label>ULTIMO AGG.</label><span>${fmtDate(inc.lastModifiedDateTime)}</div></span>
-            <div class="meta-item"><label>DURATA</label><span>${days} giorni</div></span>
-            ${affected?`<div class="meta-item" style="grid-column:1/-1"><label>WORKLOAD IMPATTATI</label><span>${affected.value}</div>`</span>:''}
+            <div class="meta-item"><label>SERVIZIO</label><span>${inc.service}</span></div>
+            <div class="meta-item"><label>FEATURE</label><span>${inc.feature||'—'}</span></div>
+            <div class="meta-item"><label>CLASSIFICAZIONE</label><span style="text-transform:capitalize">${inc.classification}</span></div>
+            <div class="meta-item"><label>INIZIO</label><span>${fmtDate(inc.startDateTime)}</span></div>
+            <div class="meta-item"><label>ULTIMO AGG.</label><span>${fmtDate(inc.lastModifiedDateTime)}</span></div>
+            <div class="meta-item"><label>DURATA</label><span>${days} giorni</span></div>
+            ${affected?`<div class="meta-item" style="grid-column:1/-1"><label>WORKLOAD IMPATTATI</label><span>${affected.value}</span></div>`:''}
           </div>
         </div>
         <div class="tl-section">
