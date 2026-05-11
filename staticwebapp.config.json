@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "userDetailsClaim": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/e5e153cb-1ee5-41b4-99ce-0331ea258a0a/v2.0",
+          "clientIdSettingName": "73d80ae8-d858-41f4-8745-ac8f69184a46",
+          "clientSecretSettingName": "gPY8Q~vjjHZkpRKx-x5QLJl~ueJHETE.PR92OaXE"
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "route": "/*",
+      "allowedRoles": ["authenticated"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  }
+}
